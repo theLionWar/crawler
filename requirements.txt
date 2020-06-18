@@ -1,0 +1,4 @@
+requests~=2.24.0
+arrow==0.15.6
+lxml==4.5.1
+tinydb==4.1.1
