@@ -5,6 +5,7 @@ import arrow
 import requests
 from requests.models import Response
 from crawler.generic_crawler.crawler import Parser, CrawledItem
+from crawler.pastebin_crawler.utils import parse_text_time_ago_to_mins
 
 
 class Paste(CrawledItem):
@@ -73,16 +74,16 @@ class PasteParser(Parser):
         return raw_page.xpath("//table/tr")[1:]
 
     def is_newer_item(self, raw_paste: html.HtmlElement) -> bool:
-        interval_in_minutes = self.newer_interval_in_sec * 60
-
         # newer pastes were posted not more than x minutes ago,
         # based on the interval
+
+        interval_in_minutes = self.newer_interval_in_sec / 60
+
         posted_time_ago_str = raw_paste.getchildren()[1].text
-        # TODO: move condition to utils
-        if 'min ago' in posted_time_ago_str \
-                and int(posted_time_ago_str.replace(' min ago', '')) \
-                < interval_in_minutes:
+        time_ago_in_mins = parse_text_time_ago_to_mins(posted_time_ago_str)
+        if time_ago_in_mins < interval_in_minutes:
             return True
+
         return False
 
     @staticmethod

@@ -1,20 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Dict
-
 from requests.models import Response
+
+from crawler.storage_management.storages import StorageManager
 
 
 class CrawledItem:
 
     def to_json(self) -> Dict:
         return self.__dict__
-
-
-class StorageManager(ABC):
-
-    @abstractmethod
-    def store(self, item: CrawledItem):
-        pass
 
 
 class Parser(ABC):
@@ -47,4 +41,6 @@ class Crawler:
 
         for item_id in item_ids:
             parsed_item = self.parser.parse_item(item_id)
-            self.storage_manager.store(parsed_item)
+            self.storage_manager.create(parsed_item.to_json())
+
+        print(f'Stored {len(item_ids)} new items')
