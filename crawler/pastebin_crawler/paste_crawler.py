@@ -141,7 +141,7 @@ class PasteParser(Parser):
 
         posted_time_ago_str = raw_paste.getchildren()[1].text
         time_ago_in_mins = parse_text_time_ago_to_mins(posted_time_ago_str)
-        if time_ago_in_mins < interval_in_mins:
+        if time_ago_in_mins <= interval_in_mins:
             return True
 
         return False
