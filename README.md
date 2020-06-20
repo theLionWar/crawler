@@ -1,4 +1,4 @@
-How to run install and run the Pastebin crawler:
+How to run install and run my Pastebin crawler:
 
 1. Unzip project
 
@@ -11,6 +11,7 @@ How to run install and run the Pastebin crawler:
    # pip install -r requirements.txt
 
 4. Run crawler:
+   # export PYTHONPATH=/path/to/crawler/directory
    # cd /path/to/crawler/directory
    # python crawler/runner.py
 
