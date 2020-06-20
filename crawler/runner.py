@@ -1,4 +1,5 @@
 import time
+
 from crawler.generic_crawler.constants import DEFAULT_SCHEDULER_INTERVAL_SECS
 from crawler.generic_crawler.crawler import Crawler
 from crawler.pastebin_crawler.paste_crawler import PasteParser

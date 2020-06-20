@@ -1,12 +1,13 @@
 from typing import Dict, List
 
-from arrow import ParserError
-from lxml import html
 import arrow
+from lxml import html
 import requests
 from requests.models import Response
+
 from crawler.generic_crawler.crawler import Parser, CrawledItem
-from crawler.generic_crawler.exceptions import ParsingException, ItemNotFoundException
+from crawler.generic_crawler.exceptions import ParsingException, \
+    ItemNotFoundException
 from crawler.pastebin_crawler.data_noarmalization import PasteDataNormalizer
 from crawler.pastebin_crawler.utils import parse_text_time_ago_to_mins
 
@@ -31,7 +32,6 @@ class PasteParser(Parser):
 
     domain = 'https://pastebin.com/'
     archive_resource = 'archive'
-    raw_content_resource = 'raw'
 
     @staticmethod
     def get_author_by_raw_item(raw_item: html.HtmlElement) -> str:
@@ -65,25 +65,29 @@ class PasteParser(Parser):
                     raw_date = raw_date.replace('EDT', 'US/Eastern')
                     raw_date = raw_date.replace('PST', 'US/Pacific')
 
-                    return arrow.get(raw_date, 'dddd Do of MMMM YYYY hh:mm:ss A ZZZ')
+                    return arrow.get(raw_date,
+                                     'dddd Do of MMMM YYYY hh:mm:ss A ZZZ')
 
         except IndexError as e:
             print(f'could not get date {e}')
             raise ItemNotFoundException from e
 
-        except ParserError as e:
+        except arrow.ParserError as e:
             print(f'could not parse date {e}')
             raise ParsingException from e
 
-    def get_content_by_item_id(self, item_id):
-        content_url = f'{self.domain}{self.raw_content_resource}/{item_id}'
-        return requests.get(content_url).text
+    @staticmethod
+    def get_content_by_raw_item(raw_item: html.HtmlElement):
+        try:
+            return raw_item.xpath("//textarea[@id='paste_code']")[0].text
+        except IndexError as e:
+            print(f'could not get content {e}')
+            raise ItemNotFoundException from e
 
     def get_list_page(self) -> Response:
         return requests.get(f'{self.domain}{self.archive_resource}')
 
     def get_raw_item(self, item_id: str) -> html.HtmlElement:
-
         paste_page = requests.get(f'{self.domain}{item_id}')
         return html.fromstring(paste_page.content)
 
@@ -93,7 +97,7 @@ class PasteParser(Parser):
 
         author = self.get_author_by_raw_item(raw_item)
         title = self.get_title_by_raw_item(raw_item)
-        content = self.get_content_by_item_id(item_id)
+        content = self.get_content_by_raw_item(raw_item)
         date = self.get_date_by_raw_item(raw_item)
 
         return Paste(author, title, content, date)
@@ -107,11 +111,11 @@ class PasteParser(Parser):
         # newer pastes were posted not more than x minutes ago,
         # based on the interval
 
-        interval_in_minutes = self.newer_interval_in_sec / 60
+        interval_in_mins = self.newer_interval_in_sec / 60
 
         posted_time_ago_str = raw_paste.getchildren()[1].text
         time_ago_in_mins = parse_text_time_ago_to_mins(posted_time_ago_str)
-        if time_ago_in_mins < interval_in_minutes:
+        if time_ago_in_mins < interval_in_mins:
             return True
 
         return False

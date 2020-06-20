@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict
+
 from requests.models import Response
 
 from crawler.generic_crawler.exceptions import ParsingException
