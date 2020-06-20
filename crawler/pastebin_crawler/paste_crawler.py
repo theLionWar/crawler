@@ -150,13 +150,16 @@ class PasteParser(Parser):
     def get_past_id_by_raw_paste(raw_paste: html.HtmlElement) -> str:
         return raw_paste.getchildren()[0].getchildren()[1].get('href')[1:]
 
-    def get_newer_items_from_page(self, page: Response) -> List[str]:
-        # returns a list of Paste ids
+    def get_newer_items_from_page(self, page: Response,
+                                  initial_run: bool = False) -> List[str]:
+        """
+        If its the initial run - return all items
+        """
         raw_page = html.fromstring(page.content)
         raw_paste_table = self.get_raw_paste_table_by_raw_page(raw_page)
         pastes_ids_list = []
         for raw_paste in raw_paste_table:
-            if self.is_newer_item(raw_paste):
+            if self.is_newer_item(raw_paste) or initial_run:
                 pastes_ids_list.\
                     append(self.get_past_id_by_raw_paste(raw_paste))
 

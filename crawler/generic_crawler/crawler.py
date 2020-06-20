@@ -36,10 +36,12 @@ class Parser(ABC):
         pass
 
     @abstractmethod
-    def get_newer_items_from_page(self, page: Response) -> List[str]:
+    def get_newer_items_from_page(self, page: Response,
+                                  initial_run: bool = False) -> List[str]:
         """
         :param page: Http response that contains the page
         with the list of items to parse
+        :param initial_run: if its an initial run
         :return: a list of the newer item ids
         """
         pass
@@ -50,13 +52,14 @@ class Crawler:
         self.parser = parser
         self.storage_manager = storage_manager
 
-    def store_latest_items(self):
+    def store_latest_items(self, initial_run: bool = False):
         """
         Get latest items from website, parse, and store them
         """
 
         list_page = self.parser.get_list_page()
-        item_ids = self.parser.get_newer_items_from_page(list_page)
+        item_ids = self.parser.get_newer_items_from_page(list_page,
+                                                         initial_run)
 
         for item_id in item_ids:
             try:

@@ -22,6 +22,7 @@ class Scheduler:
 
     def run(self):
         iterations_counter = 0
+        initial_run = True
 
         crawler = self.get_crawler()
 
@@ -30,7 +31,8 @@ class Scheduler:
             iterations_counter += 1
 
             print(f'Starting crawling iteration {iterations_counter}')
-            crawler.store_latest_items()
+            crawler.store_latest_items(initial_run)
+            initial_run = False
             print(f'Finished crawling iteration {iterations_counter}')
 
             time.sleep(self.interval_in_sec)
