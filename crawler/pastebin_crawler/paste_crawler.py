@@ -1,21 +1,25 @@
 from typing import Dict, List
 
+from arrow import ParserError
 from lxml import html
 import arrow
 import requests
 from requests.models import Response
 from crawler.generic_crawler.crawler import Parser, CrawledItem
+from crawler.generic_crawler.exceptions import ParsingException, ItemNotFoundException
+from crawler.pastebin_crawler.data_noarmalization import PasteDataNormalizer
 from crawler.pastebin_crawler.utils import parse_text_time_ago_to_mins
 
 
 class Paste(CrawledItem):
+    normalizer = PasteDataNormalizer()
 
     def __init__(self, author: str, title: str,
                  content: str, date: arrow.Arrow):
-        self.author = author
-        self.title = title
-        self.content = content
-        self.date = date
+        self.author = self.normalizer.normalize_author(author)
+        self.title = self.normalizer.normalize_title(title)
+        self.content = self.normalizer.normalize_content(content)
+        self.date = self.normalizer.normalize_date(date)
 
     def to_json(self) -> Dict:
         json_result = super().to_json()
@@ -31,19 +35,45 @@ class PasteParser(Parser):
 
     @staticmethod
     def get_author_by_raw_item(raw_item: html.HtmlElement) -> str:
-        return raw_item.xpath("//div[@class='paste_box_line2']")[0]. \
-            getchildren()[1].text
+        try:
+            return raw_item.xpath("//div[@class='paste_box_line2']")[0]. \
+                getchildren()[1].text
+        except IndexError as e:
+            print(f'could not get author {e}')
+            raise ItemNotFoundException from e
 
     @staticmethod
     def get_title_by_raw_item(raw_item: html.HtmlElement) -> str:
-        return raw_item.xpath("//div[@class='paste_box_line1']")[0]. \
-            get('title')
+        try:
+            return raw_item.xpath("//div[@class='paste_box_line1']")[0]. \
+                get('title')
+        except IndexError as e:
+            print(f'could not get title {e}')
+            raise ItemNotFoundException from e
 
     @staticmethod
     def get_date_by_raw_item(raw_item: html.HtmlElement) -> arrow.Arrow:
-        raw_date = raw_item.xpath("//div[@class='paste_box_line2']")[0]. \
-            getchildren()[4].text
-        return arrow.get(raw_date, 'MMM Do, YYYY')
+        try:
+            potential_date_fields = raw_item. \
+                xpath("//div[@class='paste_box_line2']")[0].getchildren()
+
+            for potential_field in potential_date_fields:
+                raw_date = potential_field.get('title')
+                if raw_date:
+                    # map unsupported timezone formats
+                    raw_date = raw_date.replace('CDT', 'US/Central')
+                    raw_date = raw_date.replace('EDT', 'US/Eastern')
+                    raw_date = raw_date.replace('PST', 'US/Pacific')
+
+                    return arrow.get(raw_date, 'dddd Do of MMMM YYYY hh:mm:ss A ZZZ')
+
+        except IndexError as e:
+            print(f'could not get date {e}')
+            raise ItemNotFoundException from e
+
+        except ParserError as e:
+            print(f'could not parse date {e}')
+            raise ParsingException from e
 
     def get_content_by_item_id(self, item_id):
         content_url = f'{self.domain}{self.raw_content_resource}/{item_id}'
