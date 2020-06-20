@@ -1,7 +1,7 @@
 
 class ParsingException(Exception):
-    pass
+    message = 'Could not parse item'
 
 
 class ItemNotFoundException(Exception):
-    pass
+    message = 'Item not found'

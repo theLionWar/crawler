@@ -11,18 +11,28 @@ class Scheduler:
     def __init__(self, interval_in_sec=DEFAULT_SCHEDULER_INTERVAL_SECS):
         self.interval_in_sec = interval_in_sec
 
+    def get_crawler(self) -> Crawler:
+        """
+        :return: Crawler instance, with Pastebin Parser
+        and TinyDB storage manager.
+        """
+        parser = PasteParser(newer_interval_in_sec=self.interval_in_sec)
+        storage = TinydbStorageManager(db_name='data/pastes.json')
+        return Crawler(parser=parser, storage_manager=storage)
+
     def run(self):
         iterations_counter = 0
-        print(f'Starting to crawl {PasteParser.domain}')
+
+        crawler = self.get_crawler()
+
+        print(f'Starting to crawl {crawler.parser.domain}')
         while True:
-            parser = PasteParser(newer_interval_in_sec=self.interval_in_sec)
-            storage = TinydbStorageManager(db_name='data/pastes.json')
-
-            crawler = Crawler(parser=parser, storage_manager=storage)
-            crawler.store_latest_items()
-
             iterations_counter += 1
+
+            print(f'Starting crawling iteration {iterations_counter}')
+            crawler.store_latest_items()
             print(f'Finished crawling iteration {iterations_counter}')
+
             time.sleep(self.interval_in_sec)
 
 

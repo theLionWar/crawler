@@ -35,6 +35,11 @@ class PasteParser(Parser):
 
     @staticmethod
     def get_author_by_raw_item(raw_item: html.HtmlElement) -> str:
+        """
+        parse the page to find and return author.
+        :param raw_item: html element from Pastebin paste web page
+        :return: the author of the Paste
+        """
         try:
             return raw_item.xpath("//div[@class='paste_box_line2']")[0]. \
                 getchildren()[1].text
@@ -44,6 +49,11 @@ class PasteParser(Parser):
 
     @staticmethod
     def get_title_by_raw_item(raw_item: html.HtmlElement) -> str:
+        """
+        parse the page to find and return title.
+        :param raw_item: html element from Pastebin paste web page
+        :return: the title of the Paste
+        """
         try:
             return raw_item.xpath("//div[@class='paste_box_line1']")[0]. \
                 get('title')
@@ -53,6 +63,11 @@ class PasteParser(Parser):
 
     @staticmethod
     def get_date_by_raw_item(raw_item: html.HtmlElement) -> arrow.Arrow:
+        """
+        parse the page to find and return date.
+        :param raw_item: html element from Pastebin paste web page
+        :return: the date of the Paste
+        """
         try:
             potential_date_fields = raw_item. \
                 xpath("//div[@class='paste_box_line2']")[0].getchildren()
@@ -78,6 +93,11 @@ class PasteParser(Parser):
 
     @staticmethod
     def get_content_by_raw_item(raw_item: html.HtmlElement):
+        """
+        parse the page to find and return content.
+        :param raw_item: html element from Pastebin paste web page
+        :return: the raw content of the Paste
+        """
         try:
             return raw_item.xpath("//textarea[@id='paste_code']")[0].text
         except IndexError as e:
@@ -92,6 +112,10 @@ class PasteParser(Parser):
         return html.fromstring(paste_page.content)
 
     def parse_item(self, item_id: str) -> Paste:
+        """
+        :param item_id: paste hash id
+        :return: Paste instance based on the given paste it
+        """
 
         raw_item = self.get_raw_item(item_id)
 
@@ -108,9 +132,11 @@ class PasteParser(Parser):
         return raw_page.xpath("//table/tr")[1:]
 
     def is_newer_item(self, raw_paste: html.HtmlElement) -> bool:
-        # newer pastes were posted not more than x minutes ago,
-        # based on the interval
-
+        """
+        :param raw_paste: html element from Pastebin paste list web page
+        :return: True if the paste was posted no more than x minutes ago,
+        based on the crawling interval.
+        """
         interval_in_mins = self.newer_interval_in_sec / 60
 
         posted_time_ago_str = raw_paste.getchildren()[1].text
@@ -125,6 +151,7 @@ class PasteParser(Parser):
         return raw_paste.getchildren()[0].getchildren()[1].get('href')[1:]
 
     def get_newer_items_from_page(self, page: Response) -> List[str]:
+        # returns a list of Paste ids
         raw_page = html.fromstring(page.content)
         raw_paste_table = self.get_raw_paste_table_by_raw_page(raw_page)
         pastes_ids_list = []
